@@ -29,7 +29,7 @@ local THEME = {
 }
 
 local GAMES = {
-    ["NFT Battle"]                  = { placeId = 76603753346534,  url = "" },
+    ["NFT Battle"]                  = { placeId = 76603753346534,  url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/NFT%20Battle.lua" },
     ["rost alpha"]                  = { placeId = 13769775130,     url = "" },
     ["Rusted"]                      = { placeId = 18944968230,     url = "" },
     ["Survival LAVA for Brainrots"] = { placeId = 119987266683883, url = "" },
