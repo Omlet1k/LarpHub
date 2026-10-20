@@ -9,6 +9,7 @@ local WINDOW_TITLE = "LarpLoader"
 local VERSION      = "1.2.1"
 
 local SHOW_NOTIFICATIONS = true
+local SHOW_LOADED_BADGE  = true
 local DEBUG              = true
 
 local MIN_SIZE = Vector2.new(340, 280)
@@ -168,6 +169,92 @@ local function notify(text, kind, duration)
     task.delay(duration, function()
         local out = TweenService:Create(holder, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
             Position = UDim2.new(0.5, 0, 0, -70),
+        })
+        out:Play()
+        out.Completed:Wait()
+        gui:Destroy()
+    end)
+end
+
+local function showLoadedBadge(gameName)
+    if not SHOW_LOADED_BADGE then
+        return
+    end
+
+    local gui = create("ScreenGui", {
+        Name           = WINDOW_TITLE,
+        ResetOnSpawn   = false,
+        IgnoreGuiInset = true,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        DisplayOrder   = 999999,
+    })
+
+    local holder = create("Frame", {
+        Name             = "LoadedBadge",
+        AnchorPoint      = Vector2.new(1, 1),
+        Position         = UDim2.new(1, 32, 1, 32),
+        Size             = UDim2.fromOffset(264, 56),
+        BackgroundColor3 = THEME.Surface,
+        BorderSizePixel  = 0,
+        Parent           = gui,
+    })
+    create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = holder })
+    create("UIStroke", { Color = THEME.Stroke, Thickness = 1, Transparency = 0.3, Parent = holder })
+
+    local dot = create("Frame", {
+        Size             = UDim2.fromOffset(10, 10),
+        Position         = UDim2.new(0, 18, 0, 12),
+        BackgroundColor3 = THEME.Success,
+        BorderSizePixel  = 0,
+        Parent           = holder,
+    })
+    create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = dot })
+
+    create("TextLabel", {
+        Name                   = "LoadedTitle",
+        BackgroundTransparency = 1,
+        Position               = UDim2.new(0, 36, 0, 9),
+        Size                   = UDim2.new(1, -48, 0, 16),
+        Font                   = Enum.Font.GothamBold,
+        Text                   = "Script loaded",
+        TextSize               = 12,
+        TextColor3             = THEME.Success,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        Parent                 = holder,
+    })
+
+    create("TextLabel", {
+        Name                   = "LoadedGame",
+        BackgroundTransparency = 1,
+        Position               = UDim2.new(0, 36, 0, 28),
+        Size                   = UDim2.new(1, -48, 0, 18),
+        Font                   = Enum.Font.GothamMedium,
+        Text                   = gameName or "Unknown Game",
+        TextSize               = 13,
+        TextColor3             = THEME.Text,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        TextTruncate           = Enum.TextTruncate.AtEnd,
+        Parent                 = holder,
+    })
+
+    if type(syn) == "table" and type(syn.protect_gui) == "function" then
+        pcall(syn.protect_gui, gui)
+    end
+    local ok = pcall(function()
+        gui.Parent = resolveGuiParent()
+    end)
+    if not ok and LocalPlayer then
+        gui.Parent = LocalPlayer:FindFirstChild("PlayerGui")
+            or LocalPlayer:WaitForChild("PlayerGui", 5)
+    end
+
+    TweenService:Create(holder, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -18, 1, -18),
+    }):Play()
+
+    task.delay(6, function()
+        local out = TweenService:Create(holder, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+            Position = UDim2.new(1, 32, 1, 32),
         })
         out:Play()
         out.Completed:Wait()
@@ -839,12 +926,24 @@ if entry then
             warn("[LarpLoader] loadstring is unavailable in this environment.")
             notify("loadstring is not supported by this executor", "error", 6)
         else
-            local ok, err = pcall(function()
-                loadstring(game:HttpGet(url))()
+            local source
+            local okDownload, downloadErr = pcall(function()
+                source = game:HttpGet(url)
             end)
-            if not ok then
-                warn("[LarpLoader] Failed to execute script: " .. tostring(err))
-                notify("Script failed to load - check the F9 console", "error", 6)
+            if not okDownload then
+                warn("[LarpLoader] Failed to download script: " .. tostring(downloadErr))
+                notify("Failed to download script - check the F9 console", "error", 6)
+            else
+                local badgeName = (productInfo and productInfo.Name) or matchedName
+                print(("[LarpLoader] '%s' - script loaded successfully."):format(badgeName))
+                task.spawn(showLoadedBadge, badgeName)
+                local okRun, runErr = pcall(function()
+                    loadstring(source)()
+                end)
+                if not okRun then
+                    warn("[LarpLoader] Failed to execute script: " .. tostring(runErr))
+                    notify("Script failed to load - check the F9 console", "error", 6)
+                end
             end
         end
     else
