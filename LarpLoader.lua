@@ -33,7 +33,7 @@ local GAMES = {
     ["rost alpha"]                  = { placeId = 13769775130,     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/rost%20alpha.lua" },
     ["Rusted"]                      = { placeId = 18944968230,     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Rusted.lua" },
     ["Survival LAVA for Brainrots"] = { placeId = 119987266683883, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Survival%20LAVA%20for%20Brainrots.lua" },
-    ["Murder Mystery 2"]            = { placeId = 142823291,       url = "" },
+    ["Murder Mystery 2"]            = { placeId = 142823291,       url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Murder%20Mystery%202.lua" },
 }
 
 local function destroyOld(container)
