@@ -9,7 +9,8 @@ local runId = 0
 local Events = game:GetService("ReplicatedStorage"):WaitForChild("Events")
 
 local caseGroups = {
-   ["Free"] = {"Trash"},
+   ["Paid"] = {"Starter", "Premium", "15% Pepe", "All in"},
+   ["Free"] = {"Trash", "Daily"},
    ["Newest"] = {"Glitch 2.0", "SBR", "Mirage Lamps"},
    ["Special"] = {"Bloody Night", "Ninja Turtles", "Monarch", "Radioactive", "Angel", "Desk Calendars", "Dio", "TSUM", "Spider Man"},
    ["Tons"] = {"Durov", "Sunny Day", "REDO", "Death Note", "Mineblox", "Sunglasses", "Champions"},
@@ -19,9 +20,9 @@ local caseGroups = {
    ["Retro"] = {"Beggar", "Plodder", "Office Clerk", "Manager", "Oligarch", "Gold", "Director", "Dark", "Palm", "Burj", "Luxury"}
 }
 
-local groupOrder = {"Free", "Newest", "Special", "Tons", "Gems", "Cars", "NFT", "Retro"}
+local groupOrder = {"Paid", "Free", "Newest", "Special", "Tons", "Gems", "Cars", "NFT", "Retro"}
 
-local selectedCategory = groupOrder[1]
+local selectedCategory = "Free"
 local selectedCase = caseGroups[selectedCategory][1]
 local customCase = ""
 
@@ -132,8 +133,6 @@ local function sellAll()
    end)
 end
 
--- Окремий цикл продажу: працює незалежно від відкриття,
--- тому тумблер "Sell Items" можна вмикати/вимикати в будь-який момент.
 task.spawn(function()
    while alive do
       if farming and autoSell then
@@ -149,12 +148,11 @@ TabFarm:CreateToggle({
    Flag = "AutoFarmToggle",
    Callback = function(Value)
       farming = Value
-      runId = runId + 1 -- скасовує старий цикл, щоб не було дублів
+      runId = runId + 1
       if farming then
          local myId = runId
          task.spawn(function()
             while alive and farming and runId == myId do
-               -- pcall: помилка від сервера більше не вбиває цикл
                local ok = pcall(function()
                   local caseToOpen = (customCase ~= "" and customCase) or selectedCase
                   Events:WaitForChild("OpenCase"):InvokeServer(caseToOpen, openAmount)
