@@ -6,7 +6,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = Players.LocalPlayer
 
 local WINDOW_TITLE = "LarpLoader"
-local VERSION      = "1.2.1"
+local VERSION      = "1.3.1"
 
 local SHOW_NOTIFICATIONS = true
 local SHOW_LOADED_BADGE  = true
@@ -30,11 +30,11 @@ local THEME = {
 }
 
 local GAMES = {
-    ["NFT Battle"]                  = { placeId = 76603753346534,  url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/NFT%20Battle.lua" },
-    ["rost alpha"]                  = { placeId = 13769775130,     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/rost%20alpha.lua" },
-    ["Rusted"]                      = { placeId = 18944968230,     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Rusted.lua" },
-    ["Survival LAVA for Brainrots"] = { placeId = 119987266683883, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Survival%20LAVA%20for%20Brainrots.lua" },
-    ["Murder Mystery 2"]            = { placeId = 142823291,       url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Murder%20Mystery%202.lua" },
+    ["NFT Battle"]                  = { placeIds = { 76603753346534 },  url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/NFT%20Battle.lua" },
+    ["rost alpha"]                  = { placeIds = { 13769775130 },     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/rost%20alpha.lua" },
+    ["Rusted"]                      = { placeIds = { 18944968230 },     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Rusted.lua" },
+    ["Survival LAVA for Brainrots"] = { placeIds = { 119987266683883 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Survival%20LAVA%20for%20Brainrots.lua" },
+    ["Murder Mystery 2"]            = { placeIds = { 142823291, 335132309, 636649648 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Murder%20Mystery%202.lua" },
 }
 
 local function destroyOld(container)
@@ -547,7 +547,7 @@ local function buildFallbackUI(gameName, iconAssetId)
         Position               = UDim2.new(0, 172, 0, 84),
         Size                   = UDim2.new(1, -192, 0, 18),
         Font                   = Enum.Font.GothamMedium,
-        Text                   = "Not found in the game list",
+        Text                   = "No script for this game yet",
         TextSize               = 12,
         TextColor3             = THEME.Warning,
         TextXAlignment         = Enum.TextXAlignment.Left,
@@ -560,7 +560,7 @@ local function buildFallbackUI(gameName, iconAssetId)
         Position               = UDim2.new(0, 22, 0, 150),
         Size                   = UDim2.new(1, -44, 0, 48),
         Font                   = Enum.Font.Gotham,
-        Text                   = "This experience is not registered in LarpLoader, so no script was loaded. Add it to the GAMES table in the script together with a raw GitHub URL to enable auto-loading.",
+        Text                   = "LarpLoader has no script for this game yet. New scripts are regularly added to our GitHub (github.com/Omlet1k/LarpHub) - check back later. You don't need to edit anything yourself.",
         TextSize               = 12,
         TextColor3             = THEME.TextMuted,
         TextTransparency       = 0.1,
@@ -703,7 +703,8 @@ local function buildFallbackUI(gameName, iconAssetId)
     for order, gameEntryName in ipairs(gameNames) do
         local gameEntry  = GAMES[gameEntryName]
         local hasUrl     = trim(gameEntry.url) ~= ""
-        local rowPlaceId = tonumber(gameEntry.placeId) or 0
+        local entryIds   = gameEntry.placeIds or { gameEntry.placeId }
+        local rowPlaceId = tonumber(entryIds[1]) or 0
 
         local row = create("Frame", {
             Size             = UDim2.new(1, -6, 0, 50),
@@ -872,9 +873,12 @@ end
 
 local function findGameEntry(productInfo)
     for name, entry in pairs(GAMES) do
-        local pid = tonumber(entry.placeId) or 0
-        if pid ~= 0 and (pid == game.PlaceId or pid == game.GameId) then
-            return entry, name, "PlaceId/GameId"
+        local ids = entry.placeIds or { entry.placeId }
+        for _, rawId in ipairs(ids) do
+            local pid = tonumber(rawId) or 0
+            if pid ~= 0 and (pid == game.PlaceId or pid == game.GameId) then
+                return entry, name, "PlaceId/GameId"
+            end
         end
     end
     local infoName = productInfo and productInfo.Name
@@ -949,7 +953,7 @@ if entry then
     else
         local message = ("[LarpLoader] '%s' is registered but its URL is still empty - nothing to load."):format(matchedName)
         warn(message)
-        notify("Game found, but its URL is empty - edit the GAMES table", "warn", 6)
+        notify("Script for this game isn't published yet - check back soon", "warn", 6)
     end
 else
     local gameName    = (productInfo and productInfo.Name) or "Unknown Game"
