@@ -108,6 +108,7 @@ local ThirdPersonSettings = { Enabled = false, Distance = 10 }
 local AutoFireSettings = { Enabled = false, Delay = 0.05, LastFire = 0 }
 local StretchSettings = { Enabled = false, Value = 0.65 }
 local SpiderSettings = { Enabled = false, Speed = 50 }
+local JumpStunSettings = { Enabled = false, Height = 100 }
 local WaterSpeed = { Enabled = false, Value = 50 }
 local NoDecorationEnabled = false
 local SkyColorSettings = { Enabled = false, Color = Color3.fromRGB(135,200,255) }
@@ -1084,6 +1085,15 @@ MBox:AddToggle('InfiniteJump', { Text = 'Infinity Jump', Default = false, Callba
         end)
     end
 end })
+local JSBox = Tabs.Player:AddLeftGroupbox('Super Jump')
+JSBox:AddToggle('JumpStunEnabled', { Text = 'Enable Super Jump', Default = false, Callback = function(v) JumpStunSettings.Enabled = v end
+}):AddKeybind('JumpStunKey', { Default = 'H', Mode = 'Toggle', Title = 'Super Jump Key' })
+JSBox:AddSlider('JumpStunHeight', { Text = 'Jump Height', Default = 100, Min = 60, Max = 200, Rounding = 0, Callback = function(v) JumpStunSettings.Height = v end })
+UserInputService.JumpRequest:Connect(function()
+    if LibraryUnloaded or not JumpStunSettings.Enabled then return end
+    local r = cachedChar and cachedChar:FindFirstChild("HumanoidRootPart")
+    if r then r.AssemblyLinearVelocity = Vector3New(r.AssemblyLinearVelocity.X, JumpStunSettings.Height, r.AssemblyLinearVelocity.Z) end
+end)
 local SpBox = Tabs.Player:AddRightGroupbox('Spider')
 local spRay = RaycastParams.new(); spRay.FilterType = Enum.RaycastFilterType.Exclude; spRay.IgnoreWater = true
 SpBox:AddToggle('SpiderEnabled', { Text = 'Spider Climb', Default = false, Callback = function(v) SpiderSettings.Enabled = v end }):AddKeybind('SpiderKey', { Default = 'V', Mode = 'Toggle', Title = 'Spider Key' })
@@ -1114,6 +1124,110 @@ task_spawn(function()
     end
 end)
 Workspace.DescendantAdded:Connect(function(o) regXR(o); if XRaySettings.Enabled and o:IsA("BasePart") and isWL(o.Name) then o.Transparency = XRaySettings.Transparency end end)
+-- ===== Ported from Lurb Hub: Legit Speed + World ESP (ores / crates / NPC) =====
+local LegitSpeedSettings = { Enabled = false, Value = 1.5 }
+MBox:AddToggle('LegitSpeed', { Text = 'Legit Speed', Default = false, Callback = function(v) LegitSpeedSettings.Enabled = v end })
+MBox:AddSlider('LegitSpeedVal', { Text = 'Speed Power', Min = 1, Max = 5, Default = 1.5, Rounding = 2, Callback = function(v) LegitSpeedSettings.Value = v end })
+
+local WESP = {
+    Sulfur = false, Iron = false, Stone = false, OreDist = 500,
+    Common = false, Military = false, Elite = false, Food = false, CrateDist = 1000,
+    Npc = false, NpcDist = 1000,
+}
+local wespObjs = {}
+local function wespGetPos(obj)
+    if obj:IsA("Model") then return obj:GetPivot().Position end
+    if obj:IsA("BasePart") then return obj.Position end
+    return nil
+end
+local function wespHide(obj)
+    local e = wespObjs[obj]
+    if e then e.hl.Enabled = false; e.bb.Enabled = false end
+end
+local function wespShow(obj, text, color)
+    local e = wespObjs[obj]
+    if not e then
+        local hl = Instance.new("Highlight"); hl.Name = "LarpWorldHL"; hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.FillTransparency = 0.5; hl.OutlineTransparency = 0; hl.Parent = obj
+        local bb = Instance.new("BillboardGui"); bb.Name = "LarpWorldTag"; bb.AlwaysOnTop = true
+        bb.Size = UDim2.fromOffset(120, 36); bb.ExtentsOffset = Vector3New(0, 2, 0); bb.Adornee = obj; bb.Parent = obj
+        local lb = Instance.new("TextLabel"); lb.BackgroundTransparency = 1; lb.Size = UDim2.fromScale(1, 1)
+        lb.Font = Enum.Font.GothamBold; lb.TextSize = 13; lb.TextStrokeTransparency = 0; lb.Parent = bb
+        e = { hl = hl, bb = bb, lb = lb }
+        wespObjs[obj] = e
+    end
+    e.hl.Enabled = true; e.bb.Enabled = true
+    e.hl.FillColor = color; e.hl.OutlineColor = color
+    e.lb.TextColor3 = color; e.lb.Text = text
+end
+local function wespScan(folder, getCfg, myPos)
+    if not folder then return end
+    for _, obj in ipairs(folder:GetChildren()) do
+        local on, name, color, maxD = getCfg(obj)
+        if on then
+            local p = wespGetPos(obj)
+            if p and myPos then
+                local d = (myPos - p).Magnitude
+                if d <= maxD then wespShow(obj, name .. "\n[" .. mathFloor(d) .. "m]", color)
+                else wespHide(obj) end
+            else wespHide(obj) end
+        else wespHide(obj) end
+    end
+end
+local oreCfg = {
+    sulfur = function() return WESP.Sulfur, "SULFUR", Color3.fromRGB(255, 255, 0) end,
+    iron = function() return WESP.Iron, "IRON", Color3.new(0.7, 0.7, 0.7) end,
+    stone = function() return WESP.Stone, "STONE", Color3.fromRGB(255, 255, 255) end,
+}
+local crateCfg = {
+    crate = function() return WESP.Common, "COMMON CRATE", Color3.fromRGB(150, 75, 0) end,
+    militarycrate = function() return WESP.Military, "MILITARY CRATE", Color3.fromRGB(0, 150, 0) end,
+    elitecrate = function() return WESP.Elite, "ELITE CRATE", Color3.fromRGB(255, 0, 50) end,
+    foodbox = function() return WESP.Food, "FOOD BOX", Color3.fromRGB(0, 200, 255) end,
+    toolbox = function() return WESP.Food, "TOOL BOX", Color3.fromRGB(0, 200, 255) end,
+}
+task_spawn(function()
+    while not LibraryUnloaded do
+        pcall(function()
+            for obj, e in pairs(wespObjs) do
+                if not obj.Parent then pcall(function() e.hl:Destroy(); e.bb:Destroy() end); wespObjs[obj] = nil end
+            end
+            local root = cachedChar and cachedChar:FindFirstChild("HumanoidRootPart")
+            local myPos = root and root.Position
+            wespScan(Workspace:FindFirstChild("ores"), function(o)
+                local f = oreCfg[o.Name:lower()]
+                if not f then return false end
+                local on, n, c = f(); return on, n, c, WESP.OreDist
+            end, myPos)
+            wespScan(Workspace:FindFirstChild("Crates"), function(o)
+                local f = crateCfg[o.Name:lower()]
+                if not f then return false end
+                local on, n, c = f(); return on, n, c, WESP.CrateDist
+            end, myPos)
+            wespScan(Workspace:FindFirstChild("Npc"), function(o)
+                return WESP.Npc, "NPC", Color3.fromRGB(255, 0, 0), WESP.NpcDist
+            end, myPos)
+        end)
+        task_wait(0.2)
+    end
+end)
+Settings:OnUnload(function()
+    for obj, e in pairs(wespObjs) do pcall(function() e.hl:Destroy(); e.bb:Destroy() end) end
+    wespObjs = {}
+end)
+local WEBox = Tabs.Visual:AddRightGroupbox('World ESP')
+WEBox:AddToggle('EspSulfur', { Text = 'Sulfur', Default = false, Callback = function(v) WESP.Sulfur = v end })
+WEBox:AddToggle('EspIron', { Text = 'Iron', Default = false, Callback = function(v) WESP.Iron = v end })
+WEBox:AddToggle('EspStone', { Text = 'Stone', Default = false, Callback = function(v) WESP.Stone = v end })
+WEBox:AddSlider('OreDist', { Text = 'Ore Distance', Min = 50, Max = 3000, Default = 500, Rounding = 0, Callback = function(v) WESP.OreDist = v end })
+WEBox:AddToggle('EspCommonCrate', { Text = 'Common Crate', Default = false, Callback = function(v) WESP.Common = v end })
+WEBox:AddToggle('EspMilitaryCrate', { Text = 'Military Crate', Default = false, Callback = function(v) WESP.Military = v end })
+WEBox:AddToggle('EspEliteCrate', { Text = 'Elite Crate', Default = false, Callback = function(v) WESP.Elite = v end })
+WEBox:AddToggle('EspFoodBox', { Text = 'Food Box (+ToolBox)', Default = false, Callback = function(v) WESP.Food = v end })
+WEBox:AddSlider('CrateDist', { Text = 'Crate Distance', Min = 50, Max = 3000, Default = 1000, Rounding = 0, Callback = function(v) WESP.CrateDist = v end })
+WEBox:AddToggle('EspNpc', { Text = 'NPC ESP', Default = false, Callback = function(v) WESP.Npc = v end })
+WEBox:AddSlider('NpcDist', { Text = 'NPC Distance', Min = 50, Max = 3000, Default = 1000, Rounding = 0, Callback = function(v) WESP.NpcDist = v end })
+-- ===== end port =====
 local HG = Instance.new("ScreenGui"); HG.Name = "LarpTargetHUD"; LH.parent(HG); HG.Enabled = false
 local MF = Instance.new("Frame"); MF.Size = UDim2.new(0,320,0,90); MF.AnchorPoint = Vector2.new(0.5,0.5); MF.Position = UDim2.new(0.5,0,0.85,0); MF.BackgroundColor3 = Color3.fromRGB(30,30,30); MF.BackgroundTransparency = 0.1; MF.BorderSizePixel = 0; MF.Parent = HG
 local AI = Instance.new("ImageLabel"); AI.Size = UDim2.new(0,60,0,60); AI.Position = UDim2.new(0,15,0,15); AI.BackgroundTransparency = 1; AI.Parent = MF
@@ -1167,7 +1281,7 @@ if DrawingOK then snapline = Drawing.new("Line"); snapline.Visible = false; snap
 local cachedFovD = 300
 local lastAim = 0
 local ffTick = 0
-local physConn = RunService.Heartbeat:Connect(function()
+local physConn = RunService.Heartbeat:Connect(function(dt)
     if LibraryUnloaded then return end
     local ch = cachedChar; if not ch then return end
     local hrp = ch:FindFirstChild("HumanoidRootPart")
@@ -1179,6 +1293,9 @@ local physConn = RunService.Heartbeat:Connect(function()
             local bv = hrp:FindFirstChild(bn); if not bv then bv = Instance.new("BodyVelocity",hrp); bv.Name = bn; bv.MaxForce = Vector3New(1e5,1e5,1e5) end
             bv.Velocity = hum.MoveDirection * WaterSpeed.Value
         else local bv = hrp:FindFirstChild(bn); if bv then bv:Destroy() end end
+    end
+    if LegitSpeedSettings.Enabled and hum.MoveDirection.Magnitude > 0 then
+        hrp.CFrame = hrp.CFrame + hum.MoveDirection * (LegitSpeedSettings.Value / 10) * mathClamp(dt * 60, 0, 3)
     end
     if SpiderSettings.Enabled then
         if (LH.mobile and hum.MoveDirection.Magnitude > 0) or UserInputService:IsKeyDown(Enum.KeyCode.W) then
