@@ -6,7 +6,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = Players.LocalPlayer
 
 local WINDOW_TITLE = "LarpLoader"
-local VERSION      = "1.4.0"
+local VERSION      = "1.4.1"
 
 local SHOW_NOTIFICATIONS = true
 local SHOW_LOADED_BADGE  = true
@@ -27,6 +27,7 @@ local THEME = {
     Warning      = Color3.fromRGB(255, 176, 84),
     Danger       = Color3.fromRGB(255, 91, 110),
     Success      = Color3.fromRGB(96, 220, 130),
+    SuccessDark  = Color3.fromRGB(70, 185, 100),
 }
 
 local GAMES = {
@@ -912,18 +913,46 @@ local function buildFallbackUI(gameName, iconAssetId)
             Parent                 = row,
         })
 
-        create("TextLabel", {
-            BackgroundTransparency = 1,
-            AnchorPoint            = Vector2.new(1, 0),
-            Position               = UDim2.new(1, -14, 0, 0),
-            Size                   = UDim2.fromOffset(110, 50),
-            Font                   = Enum.Font.Gotham,
-            Text                   = hasUrl and "Script ready" or "No script",
-            TextSize               = 11,
-            TextColor3             = hasUrl and THEME.Success or THEME.TextMuted,
-            TextXAlignment         = Enum.TextXAlignment.Right,
-            Parent                 = row,
-        })
+        if hasUrl then
+            local runBtn = create("TextButton", {
+                Name             = "RunScriptButton",
+                AnchorPoint      = Vector2.new(1, 0.5),
+                Position         = UDim2.new(1, -14, 0.5, 0),
+                Size             = UDim2.fromOffset(96, 30),
+                BackgroundColor3 = THEME.Success,
+                BorderSizePixel  = 0,
+                AutoButtonColor  = false,
+                Font             = Enum.Font.GothamBold,
+                Text             = "Run Script",
+                TextSize         = 12,
+                TextColor3       = THEME.Background,
+                Parent           = row,
+            })
+            create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = runBtn })
+
+            runBtn.MouseEnter:Connect(function()
+                TweenService:Create(runBtn, TweenInfo.new(0.15), { BackgroundColor3 = THEME.SuccessDark }):Play()
+            end)
+            runBtn.MouseLeave:Connect(function()
+                TweenService:Create(runBtn, TweenInfo.new(0.15), { BackgroundColor3 = THEME.Success }):Play()
+            end)
+            runBtn.MouseButton1Click:Connect(function()
+                runScriptFromUrl(gameEntry.url, gameEntryName)
+            end)
+        else
+            create("TextLabel", {
+                BackgroundTransparency = 1,
+                AnchorPoint            = Vector2.new(1, 0),
+                Position               = UDim2.new(1, -14, 0, 0),
+                Size                   = UDim2.fromOffset(110, 50),
+                Font                   = Enum.Font.Gotham,
+                Text                   = "No script",
+                TextSize               = 11,
+                TextColor3             = THEME.TextMuted,
+                TextXAlignment         = Enum.TextXAlignment.Right,
+                Parent                 = row,
+            })
+        end
     end
 
     backBtn.MouseEnter:Connect(function()
