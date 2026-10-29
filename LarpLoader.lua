@@ -6,7 +6,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = Players.LocalPlayer
 
 local WINDOW_TITLE = "LarpLoader"
-local VERSION      = "1.3.1"
+local VERSION      = "1.4.0"
 
 local SHOW_NOTIFICATIONS = true
 local SHOW_LOADED_BADGE  = true
@@ -36,6 +36,7 @@ local GAMES = {
     ["Survival LAVA for Brainrots"] = { placeIds = { 119987266683883 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Survival%20LAVA%20for%20Brainrots.lua" },
     ["Murder Mystery 2"]            = { placeIds = { 142823291, 335132309, 636649648 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Murder%20Mystery%202.lua" },
     ["Blade Ball"]                  = { placeIds = { 13772394625, 16281300371 },        url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Blade%20Ball.lua" },
+    ["BloxStrike"]                  = { placeIds = { 114234929420007, 108194354348181, 135434213652028 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/BloxStrike.lua" },
 }
 
 local function destroyOld(container)
@@ -108,6 +109,8 @@ local function notify(text, kind, duration)
         color = THEME.Warning
     elseif kind == "error" then
         color = THEME.Danger
+    elseif kind == "success" then
+        color = THEME.Success
     end
 
     local gui = create("ScreenGui", {
@@ -263,6 +266,72 @@ local function showLoadedBadge(gameName)
     end)
 end
 
+local function runScriptCode(source, badgeName)
+    if type(loadstring) ~= "function" then
+        warn("[LarpLoader] loadstring is unavailable in this environment.")
+        notify("loadstring is not supported by this executor", "error", 6)
+        return false
+    end
+
+    local okRun, runErr = pcall(function()
+        loadstring(source)()
+    end)
+    if not okRun then
+        warn("[LarpLoader] Failed to execute script: " .. tostring(runErr))
+        notify("Script failed to load - check the F9 console", "error", 6)
+        return false
+    end
+
+    print(("[LarpLoader] '%s' - script loaded successfully."):format(badgeName))
+    task.spawn(showLoadedBadge, badgeName)
+    notify("Script loaded successfully", "success", 4)
+    return true
+end
+
+local function runScriptFromUrl(url, badgeName)
+    url = trim(url)
+
+    local hasHttpGet = false
+    pcall(function()
+        hasHttpGet = type(game.HttpGet) == "function"
+    end)
+    if not hasHttpGet then
+        warn("[LarpLoader] game:HttpGet is unavailable in this environment (executor does not support it).")
+        notify("HttpGet is not supported by this executor", "error", 6)
+        return false
+    end
+
+    local source
+    local okDownload, downloadErr = pcall(function()
+        source = game:HttpGet(url)
+    end)
+    if not okDownload then
+        warn("[LarpLoader] Failed to download script: " .. tostring(downloadErr))
+        notify("Failed to download script - check the F9 console", "error", 6)
+        return false
+    end
+
+    return runScriptCode(source, badgeName)
+end
+
+local function runManualInput(rawInput)
+    local input = trim(rawInput)
+    if input == "" then
+        notify("Paste a script URL (or script code) first", "warn", 5)
+        return false
+    end
+
+    if input:match("^www%.") then
+        input = "https://" .. input
+    end
+
+    if input:match("^https?://%S") then
+        return runScriptFromUrl(input, "Manual script")
+    end
+
+    return runScriptCode(input, "Manual script")
+end
+
 local function makeDraggable(handle, target, bind)
     local dragging, dragStart, startPos, dragInput
 
@@ -362,7 +431,7 @@ local function buildFallbackUI(gameName, iconAssetId)
         Name              = "Window",
         AnchorPoint       = Vector2.new(0.5, 0.5),
         Position          = UDim2.fromScale(0.5, 0.5),
-        Size              = UDim2.fromOffset(430, 304),
+        Size              = UDim2.fromOffset(430, 384),
         BackgroundColor3  = THEME.Background,
         BorderSizePixel   = 0,
         Active            = true,
@@ -559,9 +628,9 @@ local function buildFallbackUI(gameName, iconAssetId)
         Name                   = "Hint",
         BackgroundTransparency = 1,
         Position               = UDim2.new(0, 22, 0, 150),
-        Size                   = UDim2.new(1, -44, 0, 48),
+        Size                   = UDim2.new(1, -44, 0, 44),
         Font                   = Enum.Font.Gotham,
-        Text                   = "LarpLoader has no script for this game yet. New scripts are regularly added to our GitHub (github.com/Omlet1k/LarpHub) - check back later. You don't need to edit anything yourself.",
+        Text                   = "LarpLoader has no script for this game yet. New scripts are regularly added to our GitHub (github.com/Omlet1k/LarpHub) - or paste a script URL below and run it yourself.",
         TextSize               = 12,
         TextColor3             = THEME.TextMuted,
         TextTransparency       = 0.1,
@@ -570,6 +639,74 @@ local function buildFallbackUI(gameName, iconAssetId)
         TextWrapped            = true,
         Parent                 = homePage,
     })
+
+    create("TextLabel", {
+        Name                   = "ManualLabel",
+        BackgroundTransparency = 1,
+        Position               = UDim2.new(0, 22, 0, 198),
+        Size                   = UDim2.new(1, -44, 0, 14),
+        Font                   = Enum.Font.GothamMedium,
+        Text                   = "LOAD SCRIPT MANUALLY",
+        TextSize               = 11,
+        TextColor3             = THEME.AccentSoft,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        Parent                 = homePage,
+    })
+
+    local urlInput = create("TextBox", {
+        Name              = "UrlInput",
+        Position          = UDim2.new(0, 22, 0, 216),
+        Size              = UDim2.new(1, -44, 0, 32),
+        BackgroundColor3  = THEME.Surface,
+        BorderSizePixel   = 0,
+        Font              = Enum.Font.Gotham,
+        PlaceholderText   = "https://... paste script URL here",
+        PlaceholderColor3 = THEME.TextMuted,
+        Text              = "",
+        TextSize          = 12,
+        TextColor3        = THEME.Text,
+        TextXAlignment    = Enum.TextXAlignment.Left,
+        ClearTextOnFocus  = false,
+        ClipsDescendants  = true,
+        Parent            = homePage,
+    })
+    create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = urlInput })
+    create("UIStroke", { Color = THEME.Stroke, Thickness = 1, Transparency = 0.45, Parent = urlInput })
+    create("UIPadding", {
+        PaddingLeft  = UDim.new(0, 10),
+        PaddingRight = UDim.new(0, 10),
+        Parent       = urlInput,
+    })
+
+    local loadBtn = create("TextButton", {
+        Name             = "LoadScriptButton",
+        Position         = UDim2.new(0, 22, 0, 256),
+        Size             = UDim2.new(1, -44, 0, 34),
+        BackgroundColor3 = THEME.Accent,
+        BorderSizePixel  = 0,
+        AutoButtonColor  = false,
+        Font             = Enum.Font.GothamBold,
+        Text             = "Load & Run Script",
+        TextSize         = 13,
+        TextColor3       = THEME.Text,
+        Parent           = homePage,
+    })
+    create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = loadBtn })
+
+    loadBtn.MouseEnter:Connect(function()
+        TweenService:Create(loadBtn, TweenInfo.new(0.15), { BackgroundColor3 = THEME.Stroke }):Play()
+    end)
+    loadBtn.MouseLeave:Connect(function()
+        TweenService:Create(loadBtn, TweenInfo.new(0.15), { BackgroundColor3 = THEME.Accent }):Play()
+    end)
+    loadBtn.MouseButton1Click:Connect(function()
+        runManualInput(urlInput.Text)
+    end)
+    urlInput.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            runManualInput(urlInput.Text)
+        end
+    end)
 
     local gamesBtn = create("TextButton", {
         Name             = "GamesButton",
@@ -914,43 +1051,12 @@ if DEBUG then
     print(debugMsg)
 end
 
-local hasHttpGet = false
-pcall(function()
-    hasHttpGet = type(game.HttpGet) == "function"
-end)
-
 if entry then
     local url = trim(entry.url)
     if url ~= "" then
         local message = ("[LarpLoader] Matched '%s' via %s - executing script..."):format(matchedName, matchedHow)
         print(message)
-        if not hasHttpGet then
-            warn("[LarpLoader] game:HttpGet is unavailable in this environment (executor does not support it).")
-            notify("HttpGet is not supported by this executor", "error", 6)
-        elseif type(loadstring) ~= "function" then
-            warn("[LarpLoader] loadstring is unavailable in this environment.")
-            notify("loadstring is not supported by this executor", "error", 6)
-        else
-            local source
-            local okDownload, downloadErr = pcall(function()
-                source = game:HttpGet(url)
-            end)
-            if not okDownload then
-                warn("[LarpLoader] Failed to download script: " .. tostring(downloadErr))
-                notify("Failed to download script - check the F9 console", "error", 6)
-            else
-                local badgeName = (productInfo and productInfo.Name) or matchedName
-                print(("[LarpLoader] '%s' - script loaded successfully."):format(badgeName))
-                task.spawn(showLoadedBadge, badgeName)
-                local okRun, runErr = pcall(function()
-                    loadstring(source)()
-                end)
-                if not okRun then
-                    warn("[LarpLoader] Failed to execute script: " .. tostring(runErr))
-                    notify("Script failed to load - check the F9 console", "error", 6)
-                end
-            end
-        end
+        runScriptFromUrl(url, (productInfo and productInfo.Name) or matchedName)
     else
         local message = ("[LarpLoader] '%s' is registered but its URL is still empty - nothing to load."):format(matchedName)
         warn(message)
