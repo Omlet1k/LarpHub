@@ -1,3 +1,4 @@
+-- ориг сурс вомаглы
 do
     if getgenv().__LarpHub_UNLOAD then pcall(getgenv().__LarpHub_UNLOAD) end
     task.wait(0.2)
