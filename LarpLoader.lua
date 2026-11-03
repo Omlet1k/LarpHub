@@ -6,7 +6,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = Players.LocalPlayer
 
 local WINDOW_TITLE = "LarpLoader"
-local VERSION      = "1.4.1"
+local VERSION      = "1.5.0"
 
 local SHOW_NOTIFICATIONS = true
 local SHOW_LOADED_BADGE  = true
@@ -32,7 +32,10 @@ local THEME = {
 
 local GAMES = {
     ["NFT Battle"]                  = { placeIds = { 76603753346534 },  url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/NFT%20Battle.lua" },
-    ["rost alpha"]                  = { placeIds = { 13769775130 },     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/rost%20alpha.lua" },
+    ["rost alpha"]                  = { placeIds = { 13769775130 },     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/rost%20alpha.lua", versions = {
+        { label = "Old", url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/rost%20alpha.lua" },
+        { label = "New", url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/rost%20alpha%20(new).lua" },
+    } },
     ["Rusted"]                      = { placeIds = { 18944968230 },     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Rusted.lua" },
     ["Survival LAVA for Brainrots"] = { placeIds = { 119987266683883 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Survival%20LAVA%20for%20Brainrots.lua" },
     ["Murder Mystery 2"]            = { placeIds = { 142823291, 335132309, 636649648 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Murder%20Mystery%202.lua" },
@@ -631,7 +634,7 @@ local function buildFallbackUI(gameName, iconAssetId)
         Position               = UDim2.new(0, 22, 0, 150),
         Size                   = UDim2.new(1, -44, 0, 44),
         Font                   = Enum.Font.Gotham,
-        Text                   = "LarpLoader has no script for this game yet. New scripts are regularly added to our GitHub (github.com/Omlet1k/LarpHub) - or paste a script URL below and run it yourself.",
+        Text                   = "LarpLoader has no script for this game yet. New scripts are regularly added to GitHub - or paste a script URL below and run it yourself.",
         TextSize               = 12,
         TextColor3             = THEME.TextMuted,
         TextTransparency       = 0.1,
@@ -913,7 +916,48 @@ local function buildFallbackUI(gameName, iconAssetId)
             Parent                 = row,
         })
 
-        if hasUrl then
+        local versions    = gameEntry.versions
+        local hasVersions = type(versions) == "table" and #versions > 0
+
+        if hasVersions then
+            local btnW, btnGap = 64, 6
+            for vIndex = 1, #versions do
+                local versionEntry = versions[vIndex]
+                local versionLabel = tostring(versionEntry.label or ("v" .. tostring(vIndex)))
+                local versionUrl   = trim(versionEntry.url or "")
+                if versionUrl ~= "" then
+                    local isLatest     = (vIndex == #versions)
+                    local btnColor     = isLatest and THEME.Accent or THEME.Success
+                    local btnColorDark = isLatest and THEME.Stroke or THEME.SuccessDark
+
+                    local versionBtn = create("TextButton", {
+                        Name             = "VersionButton_" .. versionLabel,
+                        AnchorPoint      = Vector2.new(1, 0.5),
+                        Position         = UDim2.new(1, -14 - (#versions - vIndex) * (btnW + btnGap), 0.5, 0),
+                        Size             = UDim2.fromOffset(btnW, 30),
+                        BackgroundColor3 = btnColor,
+                        BorderSizePixel  = 0,
+                        AutoButtonColor  = false,
+                        Font             = Enum.Font.GothamBold,
+                        Text             = versionLabel,
+                        TextSize         = 12,
+                        TextColor3       = THEME.Background,
+                        Parent           = row,
+                    })
+                    create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = versionBtn })
+
+                    versionBtn.MouseEnter:Connect(function()
+                        TweenService:Create(versionBtn, TweenInfo.new(0.15), { BackgroundColor3 = btnColorDark }):Play()
+                    end)
+                    versionBtn.MouseLeave:Connect(function()
+                        TweenService:Create(versionBtn, TweenInfo.new(0.15), { BackgroundColor3 = btnColor }):Play()
+                    end)
+                    versionBtn.MouseButton1Click:Connect(function()
+                        runScriptFromUrl(versionUrl, gameEntryName .. " (" .. versionLabel .. ")")
+                    end)
+                end
+            end
+        elseif hasUrl then
             local runBtn = create("TextButton", {
                 Name             = "RunScriptButton",
                 AnchorPoint      = Vector2.new(1, 0.5),
@@ -1038,6 +1082,240 @@ local function buildFallbackUI(gameName, iconAssetId)
     return screenGui
 end
 
+local function buildVersionPrompt(gameName, versions)
+    local connections = {}
+    local function bind(signal, fn)
+        local conn = signal:Connect(fn)
+        connections[#connections + 1] = conn
+        return conn
+    end
+    local function disconnectAll()
+        for i = 1, #connections do
+            pcall(function()
+                connections[i]:Disconnect()
+            end)
+        end
+        table.clear(connections)
+    end
+
+    local screenGui = create("ScreenGui", {
+        Name           = WINDOW_TITLE,
+        ResetOnSpawn   = false,
+        IgnoreGuiInset = true,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        DisplayOrder   = 999999,
+    })
+
+    local window = create("CanvasGroup", {
+        Name              = "Window",
+        AnchorPoint       = Vector2.new(0.5, 0.5),
+        Position          = UDim2.fromScale(0.5, 0.5),
+        Size              = UDim2.fromOffset(400, 206),
+        BackgroundColor3  = THEME.Background,
+        BorderSizePixel   = 0,
+        Active            = true,
+        ClipsDescendants  = true,
+        GroupTransparency = 1,
+        Parent            = screenGui,
+    })
+    create("UICorner", { CornerRadius = UDim.new(0, 14), Parent = window })
+    create("UIStroke", { Color = THEME.Stroke, Thickness = 1.5, Transparency = 0.25, Parent = window })
+    local uiScale = create("UIScale", { Scale = 0.92, Parent = window })
+
+    local titleBar = create("Frame", {
+        Name                   = "TitleBar",
+        BackgroundTransparency = 1,
+        Size                   = UDim2.new(1, 0, 0, 46),
+        Active                 = true,
+        Parent                 = window,
+    })
+
+    local titleDot = create("Frame", {
+        Size             = UDim2.fromOffset(8, 8),
+        Position         = UDim2.new(0, 18, 0, 19),
+        BackgroundColor3 = THEME.Accent,
+        BorderSizePixel  = 0,
+        Parent           = titleBar,
+    })
+    create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = titleDot })
+
+    local titleLabel = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Position               = UDim2.new(0, 34, 0, 0),
+        Size                   = UDim2.new(1, -76, 1, 0),
+        Font                   = Enum.Font.GothamBold,
+        Text                   = WINDOW_TITLE,
+        TextSize               = 15,
+        TextColor3             = THEME.Text,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        Parent                 = titleBar,
+    })
+    create("UIGradient", {
+        Color    = ColorSequence.new(THEME.AccentSoft, THEME.Accent),
+        Rotation = 90,
+        Parent   = titleLabel,
+    })
+
+    local closeBtn = create("TextButton", {
+        Name             = "Close",
+        Size             = UDim2.fromOffset(28, 28),
+        Position         = UDim2.new(1, -38, 0, 9),
+        BackgroundColor3 = THEME.Surface,
+        BorderSizePixel  = 0,
+        AutoButtonColor  = false,
+        Font             = Enum.Font.GothamBold,
+        Text             = "X",
+        TextSize         = 13,
+        TextColor3       = THEME.TextMuted,
+        Parent           = titleBar,
+    })
+    create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = closeBtn })
+
+    closeBtn.MouseEnter:Connect(function()
+        TweenService:Create(closeBtn, TweenInfo.new(0.15), {
+            BackgroundColor3 = THEME.Danger,
+            TextColor3       = THEME.Text,
+        }):Play()
+    end)
+    closeBtn.MouseLeave:Connect(function()
+        TweenService:Create(closeBtn, TweenInfo.new(0.15), {
+            BackgroundColor3 = THEME.Surface,
+            TextColor3       = THEME.TextMuted,
+        }):Play()
+    end)
+    closeBtn.MouseButton1Click:Connect(function()
+        print("[LarpLoader] Version selection dismissed - no script was started.")
+        disconnectAll()
+        screenGui:Destroy()
+    end)
+
+    local accentLine = create("Frame", {
+        Size                   = UDim2.new(1, -36, 0, 1),
+        Position               = UDim2.new(0, 18, 0, 46),
+        BackgroundColor3       = THEME.Accent,
+        BackgroundTransparency = 0.45,
+        BorderSizePixel        = 0,
+        Parent                 = window,
+    })
+    create("UIGradient", {
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0),
+            NumberSequenceKeypoint.new(1, 1),
+        }),
+        Parent = accentLine,
+    })
+
+    create("TextLabel", {
+        Name                   = "PromptGame",
+        BackgroundTransparency = 1,
+        Position               = UDim2.new(0, 22, 0, 62),
+        Size                   = UDim2.new(1, -44, 0, 20),
+        Font                   = Enum.Font.GothamBold,
+        Text                   = gameName or "Unknown Game",
+        TextSize               = 15,
+        TextColor3             = THEME.Text,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        TextTruncate           = Enum.TextTruncate.AtEnd,
+        Parent                 = window,
+    })
+
+    create("TextLabel", {
+        Name                   = "PromptQuestion",
+        BackgroundTransparency = 1,
+        Position               = UDim2.new(0, 22, 0, 86),
+        Size                   = UDim2.new(1, -44, 0, 36),
+        Font                   = Enum.Font.Gotham,
+        Text                   = "Multiple script versions are available for this game. Which version do you want to run?",
+        TextSize               = 12,
+        TextColor3             = THEME.TextMuted,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        TextYAlignment         = Enum.TextYAlignment.Top,
+        TextWrapped            = true,
+        Parent                 = window,
+    })
+
+    local versionHolder = create("Frame", {
+        Name                   = "VersionButtons",
+        BackgroundTransparency = 1,
+        Position               = UDim2.new(0, 22, 0, 134),
+        Size                   = UDim2.new(1, -44, 0, 40),
+        Parent                 = window,
+    })
+    create("UIListLayout", {
+        FillDirection       = Enum.FillDirection.Horizontal,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment   = Enum.VerticalAlignment.Center,
+        Padding             = UDim.new(0, 10),
+        SortOrder           = Enum.SortOrder.LayoutOrder,
+        Parent              = versionHolder,
+    })
+
+    for index, versionEntry in ipairs(versions) do
+        local versionLabel = tostring(versionEntry.label or ("Version " .. tostring(index)))
+        local versionUrl   = trim(versionEntry.url or "")
+        if versionUrl ~= "" then
+            local isLatest     = (index == #versions)
+            local btnColor     = isLatest and THEME.Accent or THEME.Success
+            local btnColorDark = isLatest and THEME.Stroke or THEME.SuccessDark
+
+            local versionBtn = create("TextButton", {
+                Name             = "VersionButton_" .. versionLabel,
+                Size             = UDim2.fromOffset(120, 40),
+                BackgroundColor3 = btnColor,
+                BorderSizePixel  = 0,
+                AutoButtonColor  = false,
+                Font             = Enum.Font.GothamBold,
+                Text             = versionLabel,
+                TextSize         = 13,
+                TextColor3       = THEME.Background,
+                LayoutOrder      = index,
+                Parent           = versionHolder,
+            })
+            create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = versionBtn })
+
+            versionBtn.MouseEnter:Connect(function()
+                TweenService:Create(versionBtn, TweenInfo.new(0.15), { BackgroundColor3 = btnColorDark }):Play()
+            end)
+            versionBtn.MouseLeave:Connect(function()
+                TweenService:Create(versionBtn, TweenInfo.new(0.15), { BackgroundColor3 = btnColor }):Play()
+            end)
+            versionBtn.MouseButton1Click:Connect(function()
+                disconnectAll()
+                screenGui:Destroy()
+                print(("[LarpLoader] '%s' - selected '%s' version, executing script..."):format(gameName or "Unknown Game", versionLabel))
+                runScriptFromUrl(versionUrl, (gameName or "Unknown Game") .. " (" .. versionLabel .. ")")
+            end)
+        end
+    end
+
+    makeDraggable(titleBar, window, bind)
+
+    screenGui.Destroying:Connect(disconnectAll)
+
+    if getgenv then
+        pcall(function()
+            getgenv().LarpLoaderGUI = screenGui
+        end)
+    end
+
+    if type(syn) == "table" and type(syn.protect_gui) == "function" then
+        pcall(syn.protect_gui, screenGui)
+    end
+
+    local parented = pcall(function()
+        screenGui.Parent = resolveGuiParent()
+    end)
+    if not parented and LocalPlayer then
+        screenGui.Parent = LocalPlayer:FindFirstChild("PlayerGui")
+            or LocalPlayer:WaitForChild("PlayerGui", 5)
+    end
+
+    TweenService:Create(uiScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+    TweenService:Create(window, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { GroupTransparency = 0 }):Play()
+
+    return screenGui
+end
+
 local function findGameEntry(productInfo)
     for name, entry in pairs(GAMES) do
         local ids = entry.placeIds or { entry.placeId }
@@ -1081,15 +1359,21 @@ if DEBUG then
 end
 
 if entry then
-    local url = trim(entry.url)
-    if url ~= "" then
-        local message = ("[LarpLoader] Matched '%s' via %s - executing script..."):format(matchedName, matchedHow)
+    if entry.versions and #entry.versions > 0 then
+        local message = ("[LarpLoader] Matched '%s' via %s - multiple script versions available, asking which one to run..."):format(matchedName, matchedHow)
         print(message)
-        runScriptFromUrl(url, (productInfo and productInfo.Name) or matchedName)
+        buildVersionPrompt((productInfo and productInfo.Name) or matchedName, entry.versions)
     else
-        local message = ("[LarpLoader] '%s' is registered but its URL is still empty - nothing to load."):format(matchedName)
-        warn(message)
-        notify("Script for this game isn't published yet - check back soon", "warn", 6)
+        local url = trim(entry.url)
+        if url ~= "" then
+            local message = ("[LarpLoader] Matched '%s' via %s - executing script..."):format(matchedName, matchedHow)
+            print(message)
+            runScriptFromUrl(url, (productInfo and productInfo.Name) or matchedName)
+        else
+            local message = ("[LarpLoader] '%s' is registered but its URL is still empty - nothing to load."):format(matchedName)
+            warn(message)
+            notify("Script for this game isn't published yet - check back soon", "warn", 6)
+        end
     end
 else
     local gameName    = (productInfo and productInfo.Name) or "Unknown Game"
