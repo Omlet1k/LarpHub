@@ -41,6 +41,8 @@ local GAMES = {
     ["Murder Mystery 2"]            = { placeIds = { 142823291, 335132309, 636649648 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Murder%20Mystery%202.lua" },
     ["Blade Ball"]                  = { placeIds = { 13772394625, 16281300371 },        url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/Blade%20Ball.lua" },
     ["BloxStrike"]                  = { placeIds = { 114234929420007, 108194354348181, 135434213652028 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/BloxStrike.lua" },
+    ["RIVALS"]                      = { placeIds = { 17625359962 },     url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/RIVALS.lua" },
+    ["+1 Upgrade Per Kill"]         = { placeIds = { 113273588963037 }, url = "https://raw.githubusercontent.com/Omlet1k/LarpHub/refs/heads/main/%2B1%20Upgrade%20Per%20Kill.lua" },
 }
 
 local function destroyOld(container)
