@@ -34,6 +34,203 @@ local function clampSpeed(value)
     return math.clamp(value,1,MaxSpeedMultiplier)
 end
 
+local LocaleStrings={
+    ["Home"]="Главная",
+    ["Settings"]="Настройки",
+    ["Appearance and menu controls"]="Оформление и управление меню",
+    ["Show welcome"]="Показать приветствие",
+    ["Version: "]="Версия: ",
+    ["Toggle menu: RightShift. On mobile, use the menu button."]="Скрыть / показать меню: RightShift. На телефоне используйте кнопку меню.",
+    ["Test notification"]="Проверить уведомление",
+    ["Interface"]="Интерфейс",
+    ["Menu key"]="Клавиша меню",
+    ["Show watermark"]="Показывать watermark",
+    ["Custom cursor"]="Кастомный курсор",
+    ["Interface scale"]="Масштаб интерфейса",
+    ["Combat"]="Бой",
+    ["Movement"]="Передвижение",
+    ["Visuals"]="Визуалы",
+    ["Tracking"]="Отслеживание",
+    ["Camera"]="Камера",
+    ["Hit Feedback"]="Отклик попаданий",
+    ["Keybinds"]="Бинды",
+    ["Adapted from the requested ScriptBlox source; the original attack packet is preserved."]="Адаптация указанного ScriptBlox-скрипта; исходный пакет атаки сохранён.",
+    ["Range (blocks)"]="Дальность (блоки)",
+    ["Attack delay"]="Задержка атаки",
+    ["Ignore teammates"]="Не атаковать команду",
+    ["Check walls"]="Проверять стены",
+    ["Defense / hits"]="Защита / попадания",
+    ["Game code: normal reach is 3 blocks; ServerEntity is 4. Default: 3 blocks / 0.50 s. The server validates hits."]="Код игры: обычный удар — 3 блока; ServerEntity — 4 блока. По умолчанию 3 блока / 0.50 с. Проверка сервера определяет результат.",
+    ["Blocks impulses in the game's movement controller."]="Блокирует импульс в собственном контроллере игры.",
+    ["Particles appear only on your server-confirmed hits."]="Партиклы только на подтверждённых сервером ваших попаданиях.",
+    ["Particle style"]="Тип партиклов",
+    ["Count"]="Количество",
+    ["Rainbow particles"]="Радужные партиклы",
+    ["Particle color"]="Цвет партиклов",
+    ["Hitmarker color"]="Цвет отметки попадания",
+    ["Hitmarker duration"]="Длительность отметки",
+    ["Hitmarker size"]="Размер отметки",
+    ["Sound"]="Звук",
+    ["Custom sound ID"]="ID своего звука",
+    ["Volume"]="Громкость",
+    ["Sound pitch"]="Тон звука",
+    ["Damage number color"]="Цвет чисел урона",
+    ["Damage units"]="Единицы урона",
+    ["Damage lifetime"]="Время чисел урона",
+    ["Test Hit Feedback"]="Проверить Hit Feedback",
+    ["Speed multiplier"]="Множитель скорости",
+    ["Keep Speed while jumping"]="Сохранять Speed в прыжке",
+    ["Automatically jump while moving on the ground. Disabled in water, lava, on ladders and while sneaking."]="Автоматически прыгает при движении по земле. В воде, лаве, на лестнице и при Sneak не срабатывает.",
+    ["Scales horizontal air acceleration. Jump height stays unchanged."]="Масштабирует горизонтальное ускорение в воздухе. Высота прыжка остаётся игровой.",
+    ["Speed: 1.05x by default, 1.10x maximum. Older configs are automatically clamped."]="Speed: 1.05x по умолчанию, максимум 1.10x. Старые конфиги автоматически ограничиваются.",
+    ["Orbit radius"]="Радиус обхода",
+    ["Target search range"]="Поиск цели",
+    ["Direction"]="Направление",
+    ["Jump while strafing"]="Прыгать при обходе",
+    ["Orbit the nearest player at the selected radius. Reverse direction on collision."]="Обход ближайшего игрока с удержанием радиуса. При столкновении направление меняется.",
+    ["Boxes"]="Рамки",
+    ["Names"]="Имена",
+    ["Health bar"]="Полоса здоровья",
+    ["Distance"]="Расстояние",
+    ["Character chams"]="Подсветка персонажей",
+    ["Chams transparency"]="Прозрачность подсветки",
+    ["Text size"]="Размер текста",
+    ["Visible only"]="Только видимые",
+    ["Hide teammates"]="Скрывать команду",
+    ["Team colors"]="Цвет команды",
+    ["ESP / Tracers / Arrows color"]="Цвет ESP / Tracers / Arrows",
+    ["Display range"]="Дальность отображения",
+    ["Tracer origin"]="Начало линии",
+    ["Tracer thickness"]="Толщина линии",
+    ["Arrows near crosshair"]="Arrows — указатели у прицела",
+    ["Distance from crosshair"]="Отступ от прицела",
+    ["Arrow size"]="Размер стрелок",
+    ["Off-screen players only"]="Только игроки за экраном",
+    ["Color, range, team and visibility filters are shared with ESP."]="Цвет, дальность, проверка команды и видимости общие с ESP.",
+    ["Current target color"]="Цвет текущей цели",
+    ["Target transparency"]="Прозрачность цели",
+    ["Active keybinds only"]="Только активные бинды",
+    ["Keep target after hit"]="Держать цель после удара",
+    ["Keep HUD after kill"]="Оставлять HUD после убийства",
+    ["HUD scale"]="Масштаб HUD",
+    ["Background transparency"]="Прозрачность фона",
+    ["Health bar color"]="Цвет полосы здоровья",
+    ["Keybinds header color"]="Цвет заголовка Keybinds",
+    ["HUD editor"]="Редактор HUD",
+    ["Preview panels without enabling combat modules."]="Показывает панели для настройки без включения боевых модулей.",
+    ["Snap to edges / center"]="Привязка к краям / центру",
+    ["Snap distance"]="Расстояние привязки",
+    ["Reset HUD positions"]="Сбросить позиции HUD",
+    ["Drag either HUD with the mouse. HP is shown in hearts; Win / Lose compares current health. R: KillAura; F: Strafe."]="Оба HUD перетаскиваются мышью. HP показан в сердцах; Win / Lose сравнивает текущее здоровье. R — KillAura; F — Strafe.",
+    ["Preview HUD (5 s)"]="Предпросмотр HUD (5 с)",
+    ["HUD EDITOR · drag panels · snap to edges and center"]="РЕДАКТОР HUD · перетаскивай панели · привязка к краям и центру",
+    ["FOV"]="FOV — угол обзора",
+    ["Field of view"]="Угол обзора",
+    ["Keep sprint / speed FOV effects"]="Сохранять эффекты спринта / скорости",
+    ["Aspect ratio"]="Соотношение сторон",
+    ["1.33 = 4:3; 1.78 = 16:9. Adjusts camera projection."]="1.33 = 4:3; 1.78 = 16:9. Меняет проекцию камеры.",
+    ["ViewModel / free look"]="ViewModel / свободный обзор",
+    ["Hold for free look"]="Удерживать для обзора",
+    ["Free look"]="Свободный обзор",
+    ["Hold the key for third-person free look. Camera rotation does not change movement direction. Release to restore the view."]="При удержании клавиши: вид от третьего лица, камера вращается независимо, направление движения сохраняется. После отпускания вид восстанавливается.",
+    ["Enabling hides the game's crosshair; disabling restores it."]="Включение скрывает штатный прицел; выключение возвращает его.",
+    ["Crosshair color"]="Цвет прицела",
+    ["Length"]="Длина",
+    ["Gap"]="Отступ",
+    ["Thickness"]="Толщина",
+    ["Center dot"]="Точка в центре",
+    ["Rotation"]="Вращение",
+    ["Rainbow hat"]="Радужная шляпа",
+    ["Hat color"]="Цвет шляпы",
+    ["Hat radius"]="Радиус шляпы",
+    ["Cone height"]="Высота конуса",
+    ["Opacity"]="Непрозрачность",
+    ["Show in first person"]="Показывать от первого лица",
+    ["Amb — lighting"]="Amb — освещение",
+    ["Brightness"]="Яркость",
+    ["Time of day"]="Время суток",
+    ["Remove fog"]="Убрать туман",
+    ["Appearance and notifications"]="Оформление и уведомления",
+    ["Theme preset"]="Профиль оформления",
+    ["Module notifications"]="Уведомления о модулях",
+    ["Configs"]="Конфиги",
+    ["Config name"]="Название конфига",
+    ["Saved configs"]="Сохранённые конфиги",
+    ["Autosave changes"]="Автосохранение изменений",
+    ["Save"]="Сохранить",
+    ["Load"]="Загрузить",
+    ["Load on startup"]="Загружать при запуске",
+    ["Delete selected"]="Удалить выбранный",
+    ["Refresh list"]="Обновить список",
+    ["Saves settings, modified keybinds, appearance and HUD positions. The HUD editor starts closed."]="Сохраняются настройки, бинды с модификаторами, оформление и позиции HUD. Редактор HUD при запуске закрыт.",
+    ["Current: "]="Текущий: ",
+    ["Config: "]="Конфиг: ",
+    ["Saved: "]="Сохранён: ",
+    ["Loaded: "]="Загружен: ",
+    ["Autoload: "]="Автозагрузка: ",
+    ["Deleted: "]="Удалён: ",
+    ["Autosave: "]="Автосохранение: ",
+    ["Config not loaded: "]="Конфиг не загружен: ",
+    ["Menu: RightShift\nFree look: hold V\nFirst launch: features off. Configs restore saved settings."]="Меню: RightShift\nСвободный обзор: удерживать V\nПервый запуск: функции выключены. Конфиги восстанавливают сохранённые настройки.",
+    ["Disable all features"]="Выключить все функции",
+    ["All features disabled."]="Все функции выключены.",
+    ["Test hit particles"]="Проверить хит-партиклы",
+    ["Game status"]="Статус игры",
+    ["Ready"]="Готово",
+    ["Attacks: "]="Атак: ",
+    ["Confirmed hits: "]="Подтверждённых попаданий: ",
+    ["Knockbacks blocked: "]="Отбрасываний заблокировано: ",
+    ["Ready! Combat / Movement / Visuals. Menu: RightShift."]="Готово! Combat / Movement / Visuals. Меню: RightShift.",
+    ["ON"]="ВКЛ",
+    ["OFF"]="ВЫКЛ",
+    ["Armor: "]="Броня: ",
+    ["Weapon: "]="Оружие: ",
+    ["HP: "]="ОЗ: ",
+    ["Win"]="Победа",
+    ["Lose"]="Поражение",
+    ["Even"]="Равно",
+    ["Kill"]="Убит",
+    ["Hearts"]="Сердца",
+    ["Right"]="Вправо",
+    ["Left"]="Влево",
+    ["Bottom"]="Снизу",
+    ["Center"]="Центр",
+    ["Mouse"]="Мышь",
+    ["Stars"]="Звёзды",
+    ["Sparks"]="Искры",
+    ["Custom"]="Свой",
+    ["Hold"]="Удерживать",
+    ["Toggle"]="Переключать",
+    ["Always"]="Всегда",
+    ["Press"]="Нажатие",
+    ["Use the Combat, Movement and Visuals tabs for +1 Upgrade Per Kill features."]="Функции +1 Upgrade Per Kill находятся во вкладках Combat, Movement и Visuals.",
+    ["KillAura: ScriptBlox source"]="KillAura: исходник ScriptBlox",
+    ["LarpHub is ready!"]="LarpHub готов к работе!",
+    ["Welcome to LarpHub"]="Добро пожаловать в LarpHub",
+    ["Welcome to LarpHub!"]="Добро пожаловать в LarpHub!",
+    ["Thanks for using LarpHub."]="Спасибо, что используете LarpHub.",
+    ["Open LarpHub"]="Открыть LarpHub",
+    ["LarpHub menu"]="Меню LarpHub",
+    ["LarpHub accent"]="Акцент LarpHub",
+    ["LarpHub color"]="Цвет LarpHub",
+    ["Unload LarpHub"]="Выгрузить LarpHub",
+    ["About LarpHub"]="О LarpHub",
+    ["Energy: cyan; LarpHub: purple; White: minimal white. Presets change interface and effect colors."]="Energy — голубой; LarpHub — фиолетовый; White — минималистичный белый. Профиль меняет интерфейс и цвета визуальных эффектов.",
+    ["default"]="по умолчанию",
+    ["Damage Indicators"]="Индикаторы урона",
+    ["Hit Particles"]="Партиклы попаданий",
+    ["Hit Sound"]="Звук попадания",
+    ["Hitmarker"]="Хитмаркер",
+    ["Target HUD"]="HUD цели",
+    ["Keybinds HUD"]="HUD биндов",
+    ["Target Highlight"]="Подсветка цели",
+    ["Crosshair"]="Прицел",
+    ["Ambient"]="Окружение",
+    ["Outdoor Ambient"]="Внешнее окружение",
+    ["Combat · Movement · Visuals"]="Бой · Передвижение · Визуалы",
+    ["Tracers"]="Трейсеры",
+}
+
 local Config = {
     KillAura = false, AuraRange = GameConfig.Combat.Reach.Entity, AuraCooldown = 0.5, TeamCheck = false, WallCheck = true,
     AntiKnockBack = false,
@@ -50,7 +247,7 @@ local Config = {
     HUDColor = Color3.fromRGB(45, 174, 237), KeybindHeaderColor = Color3.fromRGB(112, 101, 255),
     HUDTransparency = 0.12, HUDScale = 1,
     HUDEditor = false, HUDSnap = true, HUDSnapDistance = 12, HUDKillHold = 1.5,
-    ThemeProfile = "LarpHub", ModuleNotifications = true, AutoSave = true,
+    ThemeProfile = "LarpHub", Language = "English", ModuleNotifications = true, AutoSave = true,
     TargetHighlight = false, TargetHighlightColor = Color3.fromRGB(28,190,255), TargetHighlightTransparency = 0.45,
     Hitmarker = false, HitmarkerColor = Color3.fromRGB(120,225,255), HitmarkerDuration = 0.28, HitmarkerSize = 8,
     HitSound = false, HitSoundStyle = "Ping", HitSoundAsset = "", HitSoundVolume = 0.5, HitSoundPitch = 1,
@@ -429,6 +626,67 @@ local function setup()
     Library:OnUnload(function() State:Unload() end)
     local Window = Library.LarpHubWindow
     local Options = Library.Options
+    local localized={}
+    local replacements={}
+    local exact={}
+    for english,russian in pairs(LocaleStrings) do
+        exact[english]=russian
+        table.insert(replacements,{Source=english,Value=russian})
+    end
+    table.sort(replacements,function(a,b) return #a.Source>#b.Source end)
+    function State:Translate(text)
+        if type(text)~="string" or Config.Language~="Русский" then return text end
+        if exact[text] then return exact[text] end
+        local result=text
+        for _,entry in ipairs(replacements) do
+            if result:find(entry.Source,1,true) then
+                local pattern=entry.Source:gsub("([^%w])","%%%1")
+                if entry.Source:match("^%a+$") then pattern="%f[%w]"..pattern.."%f[%W]" end
+                result=result:gsub(pattern,function() return entry.Value end)
+            end
+        end
+        return result
+    end
+    local function localizeObject(object)
+        if not State.Alive or localized[object] or object:GetAttribute("LarpHubNoTranslate") then return end
+        local property=(object:IsA("TextLabel") or object:IsA("TextButton")) and "Text" or object:IsA("TextBox") and "PlaceholderText"
+        if not property then return end
+        local entry={Source=object[property],Property=property}
+        localized[object]=entry
+        local function update()
+            if entry.Applying or not State.Alive or object:GetAttribute("LarpHubNoTranslate") then return end
+            entry.Output=State:Translate(entry.Source)
+            if object[property]~=entry.Output then
+                entry.Applying=true
+                object[property]=entry.Output
+                entry.Applying=false
+            end
+        end
+        entry.Update=update
+        connect(object:GetPropertyChangedSignal(property),function()
+            if entry.Applying or not State.Alive then return end
+            local text=object[property]
+            if text==entry.Output then return end
+            entry.Source=text
+            update()
+        end)
+        connect(object.Destroying,function() localized[object]=nil end)
+        update()
+    end
+    function State:LocalizeTree(root)
+        for _,object in ipairs(root:GetDescendants()) do localizeObject(object) end
+        connect(root.DescendantAdded,function(object)
+            task.defer(function() if State.Alive and object.Parent then localizeObject(object) end end)
+        end)
+    end
+    function State:SetLanguage(language)
+        assert(language=="English" or language=="Русский","Unknown language")
+        Config.Language=language
+        for _,entry in pairs(localized) do entry.Update() end
+        if Options.UPK_Language and Options.UPK_Language.Value~=language then Options.UPK_Language:SetValue(language) end
+        self:MarkConfigDirty()
+    end
+    State:LocalizeTree(Library.ScreenGui)
     local function notify(text)
         Library:Notify({ Title = "+1 Upgrade Per Kill", Description = text, Time = 5 })
     end
@@ -992,6 +1250,7 @@ local function setup()
         ZIndexBehavior=Enum.ZIndexBehavior.Sibling,
     }, Player:WaitForChild("PlayerGui"))
     State.OverlayGui = overlayGui
+    State:LocalizeTree(overlayGui)
     local hud = { Rows={}, AvatarId=nil, NextUpdate=0, Ratio=1, Visibility=0 }
     State.HUD = hud
     local function panel(name,size,position)
@@ -1021,6 +1280,7 @@ local function setup()
     ui("UIStroke",{Color=Color3.fromRGB(183,190,210),Thickness=1,Transparency=0.3},hud.Avatar)
     hud.TargetName = text(hud.TargetFrame,"TargetName",UDim2.fromOffset(214,23),UDim2.fromOffset(70,5),"Target",15)
     hud.TargetHP = text(hud.TargetFrame,"Health",UDim2.fromOffset(150,22),UDim2.fromOffset(70,27),"HP: -- | Even",14)
+    hud.TargetName:SetAttribute("LarpHubNoTranslate",true)
     hud.TargetDistance=text(hud.TargetFrame,"Distance",UDim2.fromOffset(65,22),UDim2.fromOffset(220,27),"-- st",11)
     hud.TargetDistance.TextXAlignment=Enum.TextXAlignment.Right
     hud.TargetArmor=text(hud.TargetFrame,"Armor",UDim2.fromOffset(214,17),UDim2.fromOffset(70,66),"Armor: --",11)
@@ -1458,6 +1718,7 @@ local function setup()
             Text=text, Values=values, Default=Config[key], Callback=function(value)
                 Config[key]=value
                 if key=="ThemeProfile" and not State.ApplyingTheme then State:ApplyTheme(value) end
+                if key=="Language" then State:SetLanguage(value) end
                 State:MarkConfigDirty()
             end,
         })
@@ -1618,6 +1879,7 @@ local function setup()
     toggle(amb,"NoFog","Remove fog")
 
     local appearance=Library.LarpHubTabs.Settings:AddRightGroupbox("Appearance and notifications","palette")
+    dropdown(appearance,"Language","Language / Язык",{"English","Русский"})
     dropdown(appearance,"ThemeProfile","Theme preset",{"Energy","LarpHub","White"})
     toggle(appearance,"ModuleNotifications","Module notifications")
     appearance:AddLabel("Energy: cyan; LarpHub: purple; White: minimal white. Presets change interface and effect colors.",true)
